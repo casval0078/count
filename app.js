@@ -41,6 +41,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // Firestore の参照を取得
+const auth = firebase.auth();
 const db = firebase.firestore();
 
 // カウントデータの保存
