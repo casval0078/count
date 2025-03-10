@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>コーヒーカウントアプリ - ユーザー作成</title>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js"></script>
+  <!-- Firebase SDK (最新のv9+互換バージョンを使用) -->
+  <script type="module">
+    // Firebaseモジュールのインポート
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
 
-  <script>
     // Firebase設定
     const firebaseConfig = {
       apiKey: "YAIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
@@ -22,10 +23,41 @@
     };
 
     // Firebaseの初期化
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ユーザー作成フォームの送信イベント
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        // Firebase Authenticationを使ってユーザーを作成
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        console.log('ユーザー作成成功:', user.email);
+
+        // Firestoreにユーザー情報を追加
+        await setDoc(doc(db, "users", user.uid), {
+          name: name,
+          email: email
+        });
+
+        console.log("ユーザー情報がFirestoreに追加されました。");
+
+        // ユーザー作成後にログイン画面へ遷移
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error("エラー: ", error.message);
+        document.getElementById('error-message').innerText = `エラー: ${error.message}`;
+      }
+    });
   </script>
+
 </head>
 <body>
   <h1>ユーザー作成</h1>
