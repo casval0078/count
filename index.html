@@ -1,25 +1,70 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>オナニーカウント</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コーヒーカウントアプリ - ログイン</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase設定
+    const firebaseConfig = {
+      apiKey: "YAIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
+      authDomain: "nou-no-circle.firebaseapp.com",
+      projectId: "nou-no-circle",
+      storageBucket: "nou-no-circle.appspot.com",
+      messagingSenderId: "756338805186",
+      appId: "1:756338805186:web:cb740e035ac611b5baae5b",
+      measurementId: "G-TWBV38P13D"
+    };
+
+    // Firebaseの初期化
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
 </head>
 <body>
-    <div class="container">
-        <h1>オナニーした回数をカウント</h1>
-        <div>
-            <button id="countBtn">カウント</button>
-        </div>
-        <div>
-            <p>オナニーした回数: <span id="countDisplay">0</span> 回</p>
-        </div>
-        <div>
-            <button id="resetBtn">リセット</button>
-        </div>
-    </div>
+  <h1>ログイン</h1>
 
-    <script src="app.js"></script>
+  <!-- ログインフォーム -->
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required><br><br>
+    <input type="password" id="password" placeholder="Password" required><br><br>
+    <button type="submit">ログイン</button>
+  </form>
+
+  <!-- ユーザー作成リンク -->
+  <p>アカウントをお持ちでないですか？ <a href="register.html">ユーザー作成はこちら</a></p>
+
+  <!-- エラーメッセージ表示 -->
+  <div id="error-message"></div>
+
+  <script>
+    // ログインフォームの送信イベント
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      // Firebase Authenticationを使ってログイン
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          console.log('ログイン成功:', user.email);
+
+          // ログイン後の遷移
+          window.location.href = 'rankings.html';  // ログイン後のページ（ランキングページなど）
+        })
+        .catch((error) => {
+          const errorMessage = error.message;
+          document.getElementById('error-message').innerText = `エラー: ${errorMessage}`;
+        });
+    });
+  </script>
 </body>
 </html>
