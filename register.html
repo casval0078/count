@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コーヒーカウントアプリ - ユーザー作成</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase設定
+    const firebaseConfig = {
+      apiKey: "YAIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
+      authDomain: "nou-no-circle.firebaseapp.com",
+      projectId: "nou-no-circle",
+      storageBucket: "nou-no-circle.appspot.com",
+      messagingSenderId: "756338805186",
+      appId: "1:756338805186:web:cb740e035ac611b5baae5b",
+      measurementId: "G-TWBV38P13D"
+    };
+
+    // Firebaseの初期化
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
+</head>
+<body>
+  <h1>ユーザー作成</h1>
+
+  <!-- ユーザー作成フォーム -->
+  <form id="registerForm">
+    <input type="text" id="name" placeholder="ユーザー名" required><br><br>
+    <input type="email" id="email" placeholder="Email" required><br><br>
+    <input type="password" id="password" placeholder="Password" required><br><br>
+    <button type="submit">ユーザー作成</button>
+  </form>
+
+  <!-- エラーメッセージ表示 -->
+  <div id="error-message"></div>
+
+  <script>
+    // ユーザー作成フォームの送信イベント
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      // Firebase Authenticationを使ってユーザーを作成
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          console.log('ユーザー作成成功:', user.email);
+
+          // Firestoreにユーザー情報を追加
+          db.collection("users").doc(user.uid).set({
+            name: name,
+            email: email
+          })
+          .then(() => {
+            console.log("ユーザー情報がFirestoreに追加されました。");
+            // ユーザー作成後にログイン画面へ遷移
+            window.location.href = 'index.html';  // ログインページに遷移
+          })
+          .catch((error) => {
+            console.error("Firestoreへの保存エラー: ", error);
+            document.getElementById('error-message').innerText = `エラー: ${error.message}`;
+          });
+        })
+        .catch((error) => {
+          const errorMessage = error.message;
+          document.getElementById('error-message').innerText = `エラー: ${errorMessage}`;
+        });
+    });
+  </script>
+</body>
+</html>
