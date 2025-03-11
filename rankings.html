@@ -3,6 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ゴミ箱アイコンのスタイルを調整 -->
+<style>
+  .delete-button {
+    width: 16px; /* アイコンの幅 */
+    height: 16px; /* アイコンの高さ */
+    cursor: pointer;
+    vertical-align: middle; /* アイコンを文字の中央に揃える */
+  }
+</style>
+
   <title>コーヒーランキング</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
@@ -104,6 +114,18 @@
       });
     }
 
+    // 削除ボタン（ゴミ箱アイコン）を追加
+if (data.user === currentUserName) {
+  const deleteButton = document.createElement("img");
+  deleteButton.src = "https://img.icons8.com/ios/452/trash.png"; // ゴミ箱アイコン
+  deleteButton.alt = "削除";
+  deleteButton.classList.add("delete-button"); // スタイルを適用
+  deleteButton.addEventListener("click", async () => {
+    await deleteDoc(doc(db, "coffees", doc.id));
+    loadRecentCoffees(currentUserName); // 履歴を再読み込み
+  });
+  item.appendChild(deleteButton);
+}
     // ランキング取得
     async function loadRanking() {
       const usersMap = new Map();
