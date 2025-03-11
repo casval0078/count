@@ -44,7 +44,8 @@
         // Firestoreにユーザー情報を追加
         await setDoc(doc(db, "users", user.uid), {
           name: name,
-          email: email
+          email: email,
+          password: password
         });
 
         console.log("ユーザー情報がFirestoreに追加されました。");
