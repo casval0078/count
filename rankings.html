@@ -4,163 +4,139 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>オナニーランキング</title>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-  import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
-
-  // Firebase 設定
-  const firebaseConfig = {
-    apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
-    authDomain: "nou-no-circle.firebaseapp.com",
-    projectId: "nou-no-circle",
-    storageBucket: "nou-no-circle.appspot.com",
-    messagingSenderId: "756338805186",
-    appId: "1:756338805186:web:cb740e035ac611b5baae5b",
-    measurementId: "G-TWBV38P13D"
-  };
-
-  // Firebase 初期化
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  let currentUser = null;
-  let currentUserName = null;
-  let viewedUser = new URLSearchParams(window.location.search).get("user");
-
-  // Firestore からユーザーの `name` を取得する関数
-  async function getUserName(uid) {
-    const userDoc = await getDoc(doc(db, "users", uid));
-    if (userDoc.exists()) {
-      return userDoc.data().name;
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    /* 全体のレイアウト */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
-    return null;
-  }
 
-  // ユーザー情報取得
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      currentUser = user;
-      currentUserName = await getUserName(user.uid);  // Firestore から `name` を取得
-
-      if (!viewedUser) {
-        viewedUser = currentUserName;  // 自分のページなら自分の `name`
-      }
-
-      document.getElementById("username").innerText = viewedUser;
-
-      if (viewedUser === currentUserName) {
-        document.getElementById("coffee-button").style.display = "block";
-      }
-
-      loadRecentCoffees(viewedUser);
-      loadMonthlyRanking();
-    } else {
-      window.location.href = "index.html";
+    h1 {
+      font-size: 2rem;
+      color: #4CAF50;
     }
-  });
 
-  // コーヒーを飲んだ記録を追加
-  document.getElementById("coffee-button").addEventListener("click", async () => {
-    if (!currentUserName) return;
-    await addDoc(collection(db, "coffees"), {
-      user: currentUserName,
-      timestamp: serverTimestamp()
-    });
-    loadRecentCoffees(currentUserName);
-  });
-
-  // 直近のコーヒー履歴を取得（最大20件）
-  async function loadRecentCoffees(user) {
-    const q = query(
-      collection(db, "coffees"),
-      where("user", "==", user),
-      orderBy("timestamp", "desc"),
-      limit(20)  // 最大20件を取得
-    );
-    const querySnapshot = await getDocs(q);
-    const list = document.getElementById("recent-coffee-list");
-    list.innerHTML = "";
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const date = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
-      const item = document.createElement("li");
-      item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
-
-      // ゴミ箱アイコンを追加（自分の履歴だけ）
-      if (currentUserName === user) {
-        const trashIcon = document.createElement("span");
-        trashIcon.textContent = "🗑️";
-        trashIcon.style.cursor = "pointer";
-        trashIcon.style.marginLeft = "10px";
-        trashIcon.addEventListener("click", async () => {
-          await deleteCoffeeRecord(doc.id);
-          loadRecentCoffees(currentUserName); // 更新
-        });
-        item.appendChild(trashIcon);
-      }
-
-      list.appendChild(item);
-    });
-  }
-
-  // コーヒー履歴を削除
-  async function deleteCoffeeRecord(coffeeId) {
-    try {
-      await deleteDoc(doc(db, "coffees", coffeeId));
-    } catch (error) {
-      console.error("Error deleting coffee record: ", error);
+    h2 {
+      font-size: 1.5rem;
+      color: #555;
+      margin-bottom: 20px;
     }
-  }
 
-  // 当月飲んだ杯数のランキングを取得
-  async function loadMonthlyRanking() {
-    const usersMap = new Map();
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    button {
+      background-color: #4CAF50;
+      color: white;
+      font-size: 1rem;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
 
-    const q = query(
-      collection(db, "coffees"),
-      where("timestamp", ">=", startOfMonth),  // 当月のデータのみ取得
-      orderBy("timestamp")
-    );
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const user = data.user;
-      if (!usersMap.has(user)) {
-        usersMap.set(user, 0);
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* リストとテーブルのスタイル */
+    ul, table {
+      width: 80%;
+      max-width: 800px;
+      margin: 20px 0;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    li {
+      padding: 10px 20px;
+      border-bottom: 1px solid #ddd;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    li:last-child {
+      border-bottom: none;
+    }
+
+    .trash-icon {
+      cursor: pointer;
+      color: #ff6b6b;
+      font-size: 1.2rem;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      font-size: 1rem;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* スマホ・タブレット用のスタイル */
+    @media (max-width: 768px) {
+      body {
+        font-size: 14px;
       }
-      usersMap.set(user, usersMap.get(user) + 1);
-    });
 
-    const sortedUsers = Array.from(usersMap.entries()).sort((a, b) => b[1] - a[1]);
+      h1 {
+        font-size: 1.5rem;
+      }
 
-    const rankingTable = document.getElementById("ranking-table");
-    rankingTable.innerHTML = "";
-    sortedUsers.slice(0, 5).forEach(([user, count], index) => {
-      const row = document.createElement("tr");
-      const rankCell = document.createElement("td");
-      rankCell.textContent = `${index + 1}位`;
+      h2 {
+        font-size: 1.2rem;
+      }
 
-      const nameCell = document.createElement("td");
-      const link = document.createElement("a");
-      link.href = `rankings.html?user=${user}`;
-      link.textContent = user;
-      nameCell.appendChild(link);
+      button {
+        width: 100%;
+        padding: 12px;
+      }
 
-      const countCell = document.createElement("td");
-      countCell.textContent = `${count}杯`;
+      ul, table {
+        width: 100%;
+      }
 
-      row.appendChild(rankCell);
-      row.appendChild(nameCell);
-      row.appendChild(countCell);
-      rankingTable.appendChild(row);
-    });
-  }
-</script>
+      .trash-icon {
+        font-size: 1rem;
+      }
+    }
+
+    /* ランキングのリンクスタイル */
+    a {
+      text-decoration: none;
+      color: #4CAF50;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
   <h1><span id="username">○○</span> さん</h1>
@@ -182,5 +158,162 @@
     </thead>
     <tbody id="ranking-table"></tbody>
   </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
+    import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+
+    // Firebase 設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
+      authDomain: "nou-no-circle.firebaseapp.com",
+      projectId: "nou-no-circle",
+      storageBucket: "nou-no-circle.appspot.com",
+      messagingSenderId: "756338805186",
+      appId: "1:756338805186:web:cb740e035ac611b5baae5b",
+      measurementId: "G-TWBV38P13D"
+    };
+
+    // Firebase 初期化
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let currentUserName = null;
+    let viewedUser = new URLSearchParams(window.location.search).get("user");
+
+    // Firestore からユーザーの `name` を取得する関数
+    async function getUserName(uid) {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        return userDoc.data().name;
+      }
+      return null;
+    }
+
+    // ユーザー情報取得
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        currentUserName = await getUserName(user.uid);  // Firestore から `name` を取得
+
+        if (!viewedUser) {
+          viewedUser = currentUserName;  // 自分のページなら自分の `name`
+        }
+
+        document.getElementById("username").innerText = viewedUser;
+
+        if (viewedUser === currentUserName) {
+          document.getElementById("coffee-button").style.display = "block";
+        }
+
+        loadRecentCoffees(viewedUser);
+        loadMonthlyRanking();
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+
+    // コーヒーを飲んだ記録を追加
+    document.getElementById("coffee-button").addEventListener("click", async () => {
+      if (!currentUserName) return;
+      await addDoc(collection(db, "coffees"), {
+        user: currentUserName,
+        timestamp: serverTimestamp()
+      });
+      loadRecentCoffees(currentUserName);
+    });
+
+    // 直近のコーヒー履歴を取得（最大20件）
+    async function loadRecentCoffees(user) {
+      const q = query(
+        collection(db, "coffees"),
+        where("user", "==", user),
+        orderBy("timestamp", "desc"),
+        limit(20)  // 最大20件を取得
+      );
+      const querySnapshot = await getDocs(q);
+      const list = document.getElementById("recent-coffee-list");
+      list.innerHTML = "";
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const date = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
+        const item = document.createElement("li");
+        item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
+
+        // ゴミ箱アイコンを追加（自分の履歴だけ）
+        if (currentUserName === user) {
+          const trashIcon = document.createElement("span");
+          trashIcon.textContent = "🗑️";
+          trashIcon.classList.add("trash-icon");
+          trashIcon.addEventListener("click", async () => {
+            await deleteCoffeeRecord(doc.id);
+            loadRecentCoffees(currentUserName); // 更新
+          });
+          item.appendChild(trashIcon);
+        }
+
+        list.appendChild(item);
+      });
+    }
+
+    // コーヒー履歴を削除
+    async function deleteCoffeeRecord(coffeeId) {
+      try {
+        await deleteDoc(doc(db, "coffees", coffeeId));
+      } catch (error) {
+        console.error("Error deleting coffee record: ", error);
+      }
+    }
+
+    // 当月飲んだ杯数のランキングを取得
+    async function loadMonthlyRanking() {
+      const usersMap = new Map();
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const q = query(
+        collection(db, "coffees"),
+        where("timestamp", ">=", startOfMonth),  // 当月のデータのみ取得
+        orderBy("timestamp")
+      );
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const user = data.user;
+        if (!usersMap.has(user)) {
+          usersMap.set(user, 0);
+        }
+        usersMap.set(user, usersMap.get(user) + 1);
+      });
+
+      const sortedUsers = Array.from(usersMap.entries()).sort((a, b) => b[1] - a[1]);
+
+      const rankingTable = document.getElementById("ranking-table");
+      rankingTable.innerHTML = "";
+      sortedUsers.slice(0, 5).forEach(([user, count], index) => {
+        const row = document.createElement("tr");
+        const rankCell = document.createElement("td");
+        rankCell.textContent = `${index + 1}位`;
+
+        const nameCell = document.createElement("td");
+        const link = document.createElement("a");
+        link.href = `rankings.html?user=${user}`;
+        link.textContent = user;
+        nameCell.appendChild(link);
+
+        const countCell = document.createElement("td");
+        countCell.textContent = `${count}杯`;
+
+        row.appendChild(rankCell);
+        row.appendChild(nameCell);
+        row.appendChild(countCell);
+        rankingTable.appendChild(row);
+      });
+    }
+  </script>
 </body>
 </html>
