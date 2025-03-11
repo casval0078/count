@@ -7,7 +7,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-  import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+  import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
 
   // Firebase 設定
   const firebaseConfig = {
