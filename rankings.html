@@ -136,6 +136,13 @@
     a:hover {
       text-decoration: underline;
     }
+
+    /* 直近のオナニー履歴リストをスクロール可能に */
+    #recent-coffee-list {
+      max-height: 300px; /* 高さを調整 */
+      overflow-y: auto;  /* 垂直スクロールを有効に */
+      padding-right: 10px; /* スクロールバーが被らないように */
+    }
   </style>
 </head>
 <body>
@@ -243,7 +250,7 @@
         const item = document.createElement("li");
         item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
 
-        // ゴミ箱アイコンを追加（自分の履歴だけ）
+        // ゴミ箱アイコンを追加（自分の履歴だけ） 
         if (currentUserName === user) {
           const trashIcon = document.createElement("span");
           trashIcon.textContent = "🗑️";
@@ -297,17 +304,11 @@
       sortedUsers.slice(0, 5).forEach(([user, count], index) => {
         const row = document.createElement("tr");
         const rankCell = document.createElement("td");
-        rankCell.textContent = `${index + 1}位`;
-
+        rankCell.textContent = index + 1;
         const nameCell = document.createElement("td");
-        const link = document.createElement("a");
-        link.href = `rankings.html?user=${user}`;
-        link.textContent = user;
-        nameCell.appendChild(link);
-
+        nameCell.innerHTML = `<a href="?user=${user}">${user}</a>`;
         const countCell = document.createElement("td");
-        countCell.textContent = `${count}回`;
-
+        countCell.textContent = count;
         row.appendChild(rankCell);
         row.appendChild(nameCell);
         row.appendChild(countCell);
