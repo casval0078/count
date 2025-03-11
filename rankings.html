@@ -7,7 +7,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
 
     // Firebase 設定
     const firebaseConfig = {
@@ -71,6 +71,13 @@
       loadRecentCoffees(currentUserName);
     });
 
+    // コーヒー履歴を削除
+    async function deleteCoffee(id) {
+      const coffeeDocRef = doc(db, "coffees", id);
+      await deleteDoc(coffeeDocRef);
+      loadRecentCoffees(currentUserName);  // 削除後に履歴を再読み込み
+    }
+
     // 直近のコーヒー履歴を取得
     async function loadRecentCoffees(user) {
       const q = query(
@@ -86,6 +93,15 @@
         const date = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
         const item = document.createElement("li");
         item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
+
+        // 削除ボタンを作成
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "削除";
+        deleteButton.addEventListener("click", () => {
+          deleteCoffee(doc.id);  // 削除ボタンがクリックされたときにそのコーヒーを削除
+        });
+
+        item.appendChild(deleteButton);
         list.appendChild(item);
       });
     }
