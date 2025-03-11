@@ -56,6 +56,7 @@
 
         loadRecentCoffees(viewedUser);
         loadRanking();
+        loadMonthlyRanking();
       } else {
         window.location.href = "index.html";
       }
@@ -89,6 +90,55 @@
         list.appendChild(item);
       });
     }
+    // 現在の月のランキング取得
+async function loadMonthlyRanking() {
+  const usersMap = new Map();
+
+  // 現在の年月の範囲を取得
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  // Firestore クエリ（当月のデータのみ取得）
+  const q = query(
+    collection(db, "coffees"),
+    where("timestamp", ">=", firstDayOfMonth),
+    where("timestamp", "<=", lastDayOfMonth)
+  );
+
+  const querySnapshot = await getDocs(q);
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    if (!usersMap.has(data.user)) {
+      usersMap.set(data.user, 0);
+    }
+    usersMap.set(data.user, usersMap.get(data.user) + 1);
+  });
+
+  // ソート
+  const sortedUsers = Array.from(usersMap.entries()).sort((a, b) => b[1] - a[1]);
+
+  // テーブル更新
+  const monthlyRankingTable = document.getElementById("monthly-ranking-table");
+  monthlyRankingTable.innerHTML = "";
+  sortedUsers.slice(0, 5).forEach(([user, count], index) => {
+    const row = document.createElement("tr");
+    const rankCell = document.createElement("td");
+    rankCell.textContent = `${index + 1}位`;
+
+    const nameCell = document.createElement("td");
+    const link = document.createElement("a");
+    link.href = `rankings.html?user=${user}`;
+    link.textContent = user;
+    nameCell.appendChild(link);
+
+    const countCell = document.createElement("td");
+    countCell.textContent = `${count}杯`;
+
+    row.appendChild(rankCell);
+    row.appendChild(nameCell);
+    row.appendChild(countCell);
+    monthlyRankingTable.appendChild(row);
 
     // ランキング取得
     async function loadRanking() {
@@ -139,15 +189,27 @@
   <ul id="recent-coffee-list"></ul>
 
   <h2>月間ランキング</h2>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>順位</th>
-        <th>ユーザー名</th>
-        <th>杯数</th>
-      </tr>
-    </thead>
-    <tbody id="ranking-table"></tbody>
-  </table>
+<table border="1">
+  <thead>
+    <tr>
+      <th>順位</th>
+      <th>ユーザー名</th>
+      <th>杯数</th>
+    </tr>
+  </thead>
+  <tbody id="monthly-ranking-table"></tbody>
+</table>
+
+<h2>累計ランキング</h2>
+<table border="1">
+  <thead>
+    <tr>
+      <th>順位</th>
+      <th>ユーザー名</th>
+      <th>杯数</th>
+    </tr>
+  </thead>
+  <tbody id="ranking-table"></tbody>
+</table>
 </body>
 </html>
