@@ -4,6 +4,96 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>オナニーカウントアプリ - ユーザー作成</title>
+
+  <style>
+    /* ページ全体のスタイル */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* フォームのスタイル */
+    .form-container {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    input[type="submit"],
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    input[type="submit"]:hover,
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* エラーメッセージのスタイル */
+    #error-message {
+      margin-top: 1rem;
+      color: red;
+      font-size: 14px;
+    }
+
+    /* リンクのスタイル */
+    a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 480px) {
+      .form-container {
+        padding: 1.5rem;
+        max-width: 90%;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+
   <!-- Firebase SDK (最新のv9+互換バージョンを使用) -->
   <script type="module">
     // Firebaseモジュールのインポート
@@ -61,54 +151,22 @@
 
 </head>
 <body>
-  <h1>ユーザー作成</h1>
+  <div class="form-container">
+    <h1>ユーザー作成</h1>
 
-  <!-- ユーザー作成フォーム -->
-  <form id="registerForm">
-    <input type="text" id="name" placeholder="ユーザー名" required><br><br>
-    <input type="email" id="email" placeholder="Email" required><br><br>
-    <input type="password" id="password" placeholder="Password" required><br><br>
-    <button type="submit">ユーザー作成</button>
-  </form>
+    <!-- ユーザー作成フォーム -->
+    <form id="registerForm">
+      <input type="text" id="name" placeholder="ユーザー名" required><br><br>
+      <input type="email" id="email" placeholder="Email" required><br><br>
+      <input type="password" id="password" placeholder="Password" required><br><br>
+      <button type="submit">ユーザー作成</button>
+    </form>
 
-  <!-- エラーメッセージ表示 -->
-  <div id="error-message"></div>
+    <!-- エラーメッセージ表示 -->
+    <div id="error-message"></div>
 
-  <script>
-    // ユーザー作成フォームの送信イベント
-    document.getElementById('registerForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      // Firebase Authenticationを使ってユーザーを作成
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          console.log('ユーザー作成成功:', user.email);
-
-          // Firestoreにユーザー情報を追加
-          db.collection("users").doc(user.uid).set({
-            name: name,
-            email: email
-          })
-          .then(() => {
-            console.log("ユーザー情報がFirestoreに追加されました。");
-            // ユーザー作成後にログイン画面へ遷移
-            window.location.href = 'index.html';  // ログインページに遷移
-          })
-          .catch((error) => {
-            console.error("Firestoreへの保存エラー: ", error);
-            document.getElementById('error-message').innerText = `エラー: ${error.message}`;
-          });
-        })
-        .catch((error) => {
-          const errorMessage = error.message;
-          document.getElementById('error-message').innerText = `エラー: ${errorMessage}`;
-        });
-    });
-  </script>
+    <!-- ログイン画面へのリンク -->
+    <p>すでにアカウントをお持ちですか？ <a href="index.html">ログインはこちら</a></p>
+  </div>
 </body>
 </html>
