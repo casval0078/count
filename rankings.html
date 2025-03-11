@@ -4,142 +4,153 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>コーヒーランキング</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
+  import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
 
-    // Firebase 設定
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
-      authDomain: "nou-no-circle.firebaseapp.com",
-      projectId: "nou-no-circle",
-      storageBucket: "nou-no-circle.appspot.com",
-      messagingSenderId: "756338805186",
-      appId: "1:756338805186:web:cb740e035ac611b5baae5b",
-      measurementId: "G-TWBV38P13D"
-    };
+  // Firebase 設定
+  const firebaseConfig = {
+    apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
+    authDomain: "nou-no-circle.firebaseapp.com",
+    projectId: "nou-no-circle",
+    storageBucket: "nou-no-circle.appspot.com",
+    messagingSenderId: "756338805186",
+    appId: "1:756338805186:web:cb740e035ac611b5baae5b",
+    measurementId: "G-TWBV38P13D"
+  };
 
-    // Firebase 初期化
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  // Firebase 初期化
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    let currentUser = null;
-    let currentUserName = null;
-    let viewedUser = new URLSearchParams(window.location.search).get("user");
+  let currentUser = null;
+  let currentUserName = null;
+  let viewedUser = new URLSearchParams(window.location.search).get("user");
 
-    // Firestore からユーザーの `name` を取得する関数
-    async function getUserName(uid) {
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        return userDoc.data().name;
-      }
-      return null;
+  // Firestore からユーザーの `name` を取得する関数
+  async function getUserName(uid) {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (userDoc.exists()) {
+      return userDoc.data().name;
     }
+    return null;
+  }
 
-    // ユーザー情報取得
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        currentUserName = await getUserName(user.uid);  // Firestore から `name` を取得
+  // ユーザー情報取得
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      currentUserName = await getUserName(user.uid);  // Firestore から `name` を取得
 
-        if (!viewedUser) {
-          viewedUser = currentUserName;  // 自分のページなら自分の `name`
-        }
-
-        document.getElementById("username").innerText = viewedUser;
-
-        if (viewedUser === currentUserName) {
-          document.getElementById("coffee-button").style.display = "block";
-        }
-
-        loadRecentCoffees(viewedUser);
-        loadRanking();
-      } else {
-        window.location.href = "index.html";
+      if (!viewedUser) {
+        viewedUser = currentUserName;  // 自分のページなら自分の `name`
       }
+
+      document.getElementById("username").innerText = viewedUser;
+
+      if (viewedUser === currentUserName) {
+        document.getElementById("coffee-button").style.display = "block";
+      }
+
+      loadRecentCoffees(viewedUser);
+      loadRanking();
+    } else {
+      window.location.href = "index.html";
+    }
+  });
+
+  // コーヒーを飲んだ記録を追加
+  document.getElementById("coffee-button").addEventListener("click", async () => {
+    if (!currentUserName) return;
+    await addDoc(collection(db, "coffees"), {
+      user: currentUserName,
+      timestamp: serverTimestamp()
     });
+    loadRecentCoffees(currentUserName);
+  });
 
-    // コーヒーを飲んだ記録を追加
-    document.getElementById("coffee-button").addEventListener("click", async () => {
-      if (!currentUserName) return;
-      await addDoc(collection(db, "coffees"), {
-        user: currentUserName,
-        timestamp: serverTimestamp()
-      });
-      loadRecentCoffees(currentUserName);
-    });
+  // 直近のコーヒー履歴を取得
+  async function loadRecentCoffees(user) {
+    const q = query(
+      collection(db, "coffees"),
+      where("user", "==", user),
+      orderBy("timestamp", "desc")
+    );
+    const querySnapshot = await getDocs(q);
+    const list = document.getElementById("recent-coffee-list");
+    list.innerHTML = "";
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const date = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
+      const item = document.createElement("li");
+      item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
 
-    // 直近のコーヒー履歴を取得
-    async function loadRecentCoffees(user) {
-      const q = query(
-        collection(db, "coffees"),
-        where("user", "==", user),
-        orderBy("timestamp", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      const list = document.getElementById("recent-coffee-list");
-      list.innerHTML = "";
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const date = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
-        const item = document.createElement("li");
-        item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
-
-        // ゴミ箱アイコンを追加
+      // ゴミ箱アイコンを追加（自分の履歴だけ）
+      if (currentUserName === user) {
         const trashIcon = document.createElement("span");
         trashIcon.textContent = "🗑️";
         trashIcon.style.cursor = "pointer";
         trashIcon.style.marginLeft = "10px";
         trashIcon.addEventListener("click", async () => {
-          await deleteDoc(doc(db, "coffees", doc.id)); // Firestore から削除
-          loadRecentCoffees(currentUserName);  // 履歴を再読み込み
+          await deleteCoffeeRecord(doc.id);
+          loadRecentCoffees(currentUserName); // 更新
         });
-
         item.appendChild(trashIcon);
-        list.appendChild(item);
-      });
+      }
+
+      list.appendChild(item);
+    });
+  }
+
+  // コーヒー履歴を削除
+  async function deleteCoffeeRecord(coffeeId) {
+    try {
+      await deleteDoc(doc(db, "coffees", coffeeId));
+    } catch (error) {
+      console.error("Error deleting coffee record: ", error);
     }
+  }
 
-    // ランキング取得
-    async function loadRanking() {
-      const usersMap = new Map();
-      const q = query(collection(db, "coffees"));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!usersMap.has(data.user)) {
-          usersMap.set(data.user, 0);
-        }
-        usersMap.set(data.user, usersMap.get(data.user) + 1);
-      });
+  // ランキング取得
+  async function loadRanking() {
+    const usersMap = new Map();
+    const q = query(collection(db, "coffees"));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (!usersMap.has(data.user)) {
+        usersMap.set(data.user, 0);
+      }
+      usersMap.set(data.user, usersMap.get(data.user) + 1);
+    });
 
-      const sortedUsers = Array.from(usersMap.entries()).sort((a, b) => b[1] - a[1]);
+    const sortedUsers = Array.from(usersMap.entries()).sort((a, b) => b[1] - a[1]);
 
-      const rankingTable = document.getElementById("ranking-table");
-      rankingTable.innerHTML = "";
-      sortedUsers.slice(0, 5).forEach(([user, count], index) => {
-        const row = document.createElement("tr");
-        const rankCell = document.createElement("td");
-        rankCell.textContent = `${index + 1}位`;
+    const rankingTable = document.getElementById("ranking-table");
+    rankingTable.innerHTML = "";
+    sortedUsers.slice(0, 5).forEach(([user, count], index) => {
+      const row = document.createElement("tr");
+      const rankCell = document.createElement("td");
+      rankCell.textContent = `${index + 1}位`;
 
-        const nameCell = document.createElement("td");
-        const link = document.createElement("a");
-        link.href = `rankings.html?user=${user}`;
-        link.textContent = user;
-        nameCell.appendChild(link);
+      const nameCell = document.createElement("td");
+      const link = document.createElement("a");
+      link.href = `rankings.html?user=${user}`;
+      link.textContent = user;
+      nameCell.appendChild(link);
 
-        const countCell = document.createElement("td");
-        countCell.textContent = `${count}杯`;
+      const countCell = document.createElement("td");
+      countCell.textContent = `${count}杯`;
 
-        row.appendChild(rankCell);
-        row.appendChild(nameCell);
-        row.appendChild(countCell);
-        rankingTable.appendChild(row);
-      });
-    }
-  </script>
+      row.appendChild(rankCell);
+      row.appendChild(nameCell);
+      row.appendChild(countCell);
+      rankingTable.appendChild(row);
+    });
+  }
+</script>
 </head>
 <body>
   <h1><span id="username">○○</span> さん</h1>
