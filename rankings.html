@@ -55,7 +55,7 @@
       }
 
       loadRecentCoffees(viewedUser);
-      loadRanking();
+      loadMonthlyRanking();
     } else {
       window.location.href = "index.html";
     }
@@ -71,12 +71,13 @@
     loadRecentCoffees(currentUserName);
   });
 
-  // 直近のコーヒー履歴を取得
+  // 直近のコーヒー履歴を取得（最大20件）
   async function loadRecentCoffees(user) {
     const q = query(
       collection(db, "coffees"),
       where("user", "==", user),
-      orderBy("timestamp", "desc")
+      orderBy("timestamp", "desc"),
+      limit(20)  // 最大20件を取得
     );
     const querySnapshot = await getDocs(q);
     const list = document.getElementById("recent-coffee-list");
@@ -113,17 +114,26 @@
     }
   }
 
-  // ランキング取得
-  async function loadRanking() {
+  // 当月飲んだ杯数のランキングを取得
+  async function loadMonthlyRanking() {
     const usersMap = new Map();
-    const q = query(collection(db, "coffees"));
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const q = query(
+      collection(db, "coffees"),
+      where("timestamp", ">=", startOfMonth),  // 当月のデータのみ取得
+      orderBy("timestamp")
+    );
     const querySnapshot = await getDocs(q);
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      if (!usersMap.has(data.user)) {
-        usersMap.set(data.user, 0);
+      const user = data.user;
+      if (!usersMap.has(user)) {
+        usersMap.set(user, 0);
       }
-      usersMap.set(data.user, usersMap.get(data.user) + 1);
+      usersMap.set(user, usersMap.get(user) + 1);
     });
 
     const sortedUsers = Array.from(usersMap.entries()).sort((a, b) => b[1] - a[1]);
