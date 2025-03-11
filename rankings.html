@@ -7,7 +7,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
 
     // Firebase 設定
     const firebaseConfig = {
@@ -26,19 +26,35 @@
     const db = getFirestore(app);
 
     let currentUser = null;
+    let currentUserName = null;
     let viewedUser = new URLSearchParams(window.location.search).get("user");
+
+    // Firestore からユーザーの `name` を取得する関数
+    async function getUserName(uid) {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        return userDoc.data().name;
+      }
+      return null;
+    }
 
     // ユーザー情報取得
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
-        document.getElementById("username").innerText = viewedUser || user.displayName;
+        currentUserName = await getUserName(user.uid);  // Firestore から `name` を取得
 
-        if (!viewedUser || viewedUser === user.displayName) {
+        if (!viewedUser) {
+          viewedUser = currentUserName;  // 自分のページなら自分の `name`
+        }
+
+        document.getElementById("username").innerText = viewedUser;
+
+        if (viewedUser === currentUserName) {
           document.getElementById("coffee-button").style.display = "block";
         }
 
-        loadRecentCoffees(viewedUser || user.displayName);
+        loadRecentCoffees(viewedUser);
         loadRanking();
       } else {
         window.location.href = "index.html";
@@ -47,12 +63,12 @@
 
     // コーヒーを飲んだ記録を追加
     document.getElementById("coffee-button").addEventListener("click", async () => {
-      if (!currentUser) return;
+      if (!currentUserName) return;
       await addDoc(collection(db, "coffees"), {
-        user: currentUser.displayName,
+        user: currentUserName,
         timestamp: serverTimestamp()
       });
-      loadRecentCoffees(currentUser.displayName);
+      loadRecentCoffees(currentUserName);
     });
 
     // 直近のコーヒー履歴を取得
