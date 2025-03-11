@@ -71,13 +71,6 @@
       loadRecentCoffees(currentUserName);
     });
 
-    // コーヒー履歴を削除
-    async function deleteCoffee(id) {
-      const coffeeDocRef = doc(db, "coffees", id);
-      await deleteDoc(coffeeDocRef);
-      loadRecentCoffees(currentUserName);  // 削除後に履歴を再読み込み
-    }
-
     // 直近のコーヒー履歴を取得
     async function loadRecentCoffees(user) {
       const q = query(
@@ -94,14 +87,19 @@
         const item = document.createElement("li");
         item.textContent = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
 
-        // 削除ボタンを作成
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "削除";
-        deleteButton.addEventListener("click", () => {
-          deleteCoffee(doc.id);  // 削除ボタンがクリックされたときにそのコーヒーを削除
-        });
+        // 削除ボタン（ゴミ箱アイコン）を追加
+        if (data.user === currentUserName) {
+          const deleteButton = document.createElement("img");
+          deleteButton.src = "https://img.icons8.com/ios/452/trash.png"; // ゴミ箱アイコン
+          deleteButton.alt = "削除";
+          deleteButton.style.cursor = "pointer";
+          deleteButton.addEventListener("click", async () => {
+            await deleteDoc(doc(db, "coffees", doc.id));
+            loadRecentCoffees(currentUserName); // 履歴を再読み込み
+          });
+          item.appendChild(deleteButton);
+        }
 
-        item.appendChild(deleteButton);
         list.appendChild(item);
       });
     }
